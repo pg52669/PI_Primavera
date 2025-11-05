@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: .
+    container_name: events_backend
+    ports:
+      - "5001:5000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=events_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+    networks:
+      - events_network
+    volumes:
+      - ./src:/app/src
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: events_postgres
+    environment:
+      - POSTGRES_DB=events_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - events_network
+
+networks:
+  events_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
