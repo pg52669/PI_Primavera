@@ -1,0 +1,36 @@
+meta {
+  name: Create Organisation
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/organisation
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Tech for Good",
+    "description": "Technology for social good",
+    "allowed_municipality_ids": [11],
+    "allowed_parish_ids": [1, 2, 3],
+    "head_user_id": 1
+  }
+}
+
+docs {
+  Create a new organisation. Organisation names must be unique.
+  Organisations can specify allowed locations using municipality IDs and/or parish IDs.
+  
+  Required Fields:
+  - name: Unique name of the organisation
+  - head_user_id: ID of the user who is in charge of the organisation
+  - At least one of allowed_municipality_ids or allowed_parish_ids must be provided
+  
+  Optional Fields:
+  - description: Description of the organisation
+  - allowed_municipality_ids: Array of municipality IDs where the organisation can create events
+  - allowed_parish_ids: Array of parish IDs where the organisation can create events
+}

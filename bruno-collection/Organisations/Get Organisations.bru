@@ -1,0 +1,15 @@
+meta {
+  name: Get Organisations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/organisations
+  body: none
+  auth: none
+}
+
+docs {
+  Get all organisations with their allowed locations.
+}

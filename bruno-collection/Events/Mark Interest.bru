@@ -1,0 +1,28 @@
+meta {
+  name: Mark Interest in Event
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/event/1/interest
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_id": 1
+  }
+}
+
+docs {
+  Mark a user as interested in a specific event.
+  This increments the interested_count for the event.
+  
+  URL Parameters:
+  - event_id: ID of the event (in URL path)
+  
+  Request Body:
+  - user_id (required): ID of the user
+}

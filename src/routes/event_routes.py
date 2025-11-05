@@ -99,9 +99,3 @@ def remove_interest(event_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@events_api.route("/health", methods=["GET"])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({"status": "ok", "message": "Events API is running"}), 200

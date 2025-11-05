@@ -1,0 +1,21 @@
+meta {
+  name: Delete Event
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/event
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": 1
+  }
+}
+
+docs {
+  Delete an event by ID.
+}

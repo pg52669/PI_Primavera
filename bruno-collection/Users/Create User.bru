@@ -1,0 +1,48 @@
+meta {
+  name: Create User
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/user
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "age": 30,
+    "gender": "male",
+    "street": "Main Street",
+    "street_number": "123",
+    "apartment": "4B",
+    "postal_code": "12345",
+    "city": "Lisbon",
+    "is_volunteer": true,
+    "is_assisted": false,
+    "has_organisation": true,
+    "organisation_id": 1
+  }
+}
+
+docs {
+  Create a new user.
+  
+  Required Fields:
+  - name: User's full name
+  - age: User's age (must be >= 0)
+  - gender: "male", "female", or "other"
+  - street: Street name
+  - street_number: Street number
+  - postal_code: Postal code
+  - city: City name
+  
+  Optional Fields:
+  - apartment: Apartment number
+  - is_volunteer (default: false): Whether user is a volunteer
+  - is_assisted (default: false): Whether user is assisted by a volunteer
+  - has_organisation (default: false): Whether user is part of an organisation
+  - organisation_id: ID of the organisation user belongs to
+}

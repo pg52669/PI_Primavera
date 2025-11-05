@@ -1,0 +1,24 @@
+meta {
+  name: Get Events
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/events
+  body: none
+  auth: none
+}
+
+params:query {
+  ~name: Tech
+  ~date: 15-11-2025
+}
+
+docs {
+  Get all events with optional filters.
+  
+  Query Parameters:
+  - name: Filter by event name (partial match)
+  - date: Filter by exact date (dd-MM-yyyy format)
+}

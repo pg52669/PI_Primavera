@@ -1,0 +1,22 @@
+meta {
+  name: Get Parishes
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/parishes
+  body: none
+  auth: none
+}
+
+params:query {
+  ~municipality_id: 11
+}
+
+docs {
+  Get all parishes, optionally filtered by municipality.
+  
+  Query Parameters:
+  - municipality_id (optional): Filter by municipality ID
+}

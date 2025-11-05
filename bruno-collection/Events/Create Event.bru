@@ -1,0 +1,30 @@
+meta {
+  name: Create Event
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/event
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Tech Conference",
+    "description": "Annual tech conference",
+    "date": "15-11-2025",
+    "organisation_id": 1
+  }
+}
+
+docs {
+  Create a new event. Event names must be unique.
+  
+  Fields:
+  - name (required): Unique name of the event
+  - description (required): Description of the event
+  - date (required): Date in dd-MM-yyyy format
+  - organisation_id (optional): ID of the organisation hosting the event
+}

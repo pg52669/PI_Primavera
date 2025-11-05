@@ -1,0 +1,22 @@
+meta {
+  name: Get Municipalities
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/municipalities
+  body: none
+  auth: none
+}
+
+params:query {
+  ~district_id: 1
+}
+
+docs {
+  Get all municipalities, optionally filtered by district.
+  
+  Query Parameters:
+  - district_id (optional): Filter by district ID
+}

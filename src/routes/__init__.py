@@ -6,6 +6,7 @@ from .event_routes import events_api
 from .user_routes import users_api
 from .organisation_routes import organisations_api
 from .location_routes import locations_api
+from .health_routes import health_api
 
 
 def register_routes(app):
@@ -14,6 +15,7 @@ def register_routes(app):
     app.register_blueprint(users_api)
     app.register_blueprint(organisations_api)
     app.register_blueprint(locations_api)
+    app.register_blueprint(health_api)
 
 
 __all__ = ["register_routes"]
