@@ -1,30 +1,43 @@
 # Events System Backend - Setup Guide
 
-## Quick Start
+## Quick Start with Docker
 
 ### Prerequisites
 
 - Docker
 - Docker Compose
 
-### Running the Application
-
-1. **Start the services:**
+### Running the Full Stack
 
 ```bash
-docker-compose up --build
+docker compose up
 ```
 
-2. **The API will be available at:**
+This single command starts:
 
-- Backend: `http://localhost:5001`
-- PostgreSQL: `localhost:5432`
+- 🎨 **Frontend** at `http://localhost:5173`
+- 🔧 **Backend API** at `http://localhost:5001`
+- 🗄️ **PostgreSQL** database at `localhost:5432`
 
-3. **Stop the services:**
+### Stop the services
 
 ```bash
-docker-compose down
+docker compose down
 ```
+
+### Rebuild after changes
+
+```bash
+docker compose up --build
+```
+
+## Project Structure
+
+The docker-compose.yml orchestrates three services:
+
+- **frontend**: React + Vite app (from `../PI_Primavera_Frontend`)
+- **backend**: Python Flask API (from current directory)
+- **postgres**: PostgreSQL 16 database
 
 ## API Endpoints
 

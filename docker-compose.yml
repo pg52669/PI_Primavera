@@ -1,4 +1,17 @@
 services:
+  frontend:
+    build: ../PI_Primavera_Frontend
+    container_name: events_frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - events_network
+    volumes:
+      - ../PI_Primavera_Frontend/src:/app/src
+      - ../PI_Primavera_Frontend/public:/app/public
+    depends_on:
+      - backend
+
   backend:
     build: .
     container_name: events_backend
