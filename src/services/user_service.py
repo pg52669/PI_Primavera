@@ -3,7 +3,12 @@ User service - Business logic for users
 """
 
 from utils.validators import validate_required_fields, validate_gender
-from models.user_model import create_user_in_db, get_users_from_db
+from models.user_model import (
+    check_user_exists,
+    create_user_in_db,
+    get_users_from_db,
+    delete_user_from_db,
+)
 from models.organisation_model import check_organisation_exists_by_id
 
 
@@ -62,3 +67,21 @@ def get_users():
     """
     users = get_users_from_db()
     return True, {"users": [user for user in users], "count": len(users)}, 200
+
+
+def delete_user(user_id):
+    """
+    Delete a user by ID
+    Returns: (success: bool, result: dict/str, status_code: int)
+    """
+    # Check if user exists first
+    if not check_user_exists(user_id):
+        return False, "User not found", 404
+
+    # Delete the user
+    success = delete_user_from_db(user_id)
+
+    if not success:
+        return False, "Failed to delete user", 500
+
+    return True, {"message": f"User with ID {user_id} deleted successfully"}, 200

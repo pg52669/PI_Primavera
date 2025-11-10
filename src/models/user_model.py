@@ -66,3 +66,18 @@ def get_users_from_db():
     finally:
         cursor.close()
         conn.close()
+
+
+def delete_user_from_db(user_id):
+    """Delete a user from database"""
+    conn = get_db_connection()
+    cursor = get_db_cursor(conn)
+
+    try:
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        deleted_rows = cursor.rowcount
+        conn.commit()
+        return deleted_rows > 0
+    finally:
+        cursor.close()
+        conn.close()
