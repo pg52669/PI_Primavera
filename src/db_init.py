@@ -157,6 +157,68 @@ def init_database():
             """
             )
 
+            # Create user_codes table for QR code generation
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user_codes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL UNIQUE,
+                    code VARCHAR(20) NOT NULL UNIQUE,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """
+            )
+
+            # Create volunteer_assisted table for volunteer-assisted relationships
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS volunteer_assisted (
+                    id SERIAL PRIMARY KEY,
+                    volunteer_id INTEGER NOT NULL,
+                    assisted_id INTEGER NOT NULL UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (volunteer_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (assisted_id) REFERENCES users(id) ON DELETE CASCADE,
+                    UNIQUE(volunteer_id, assisted_id)
+                )
+            """
+            )
+
+            # Create event_transport_requests table for transport requests
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS event_transport_requests (
+                    id SERIAL PRIMARY KEY,
+                    event_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    requested_by_volunteer_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (requested_by_volunteer_id) REFERENCES users(id) ON DELETE SET NULL,
+                    UNIQUE(event_id, user_id)
+                )
+            """
+            )
+
+            # Create messages table for in-app messaging
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS messages (
+                    id SERIAL PRIMARY KEY,
+                    sender_id INTEGER NOT NULL,
+                    receiver_id INTEGER NOT NULL,
+                    message TEXT NOT NULL,
+                    is_read BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """
+            )
+
             # Add foreign key constraints
             cursor.execute(
                 """
@@ -312,6 +374,54 @@ def init_database():
             cursor.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_org_allowed_par_org ON organisation_allowed_parishes(organisation_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_user_codes_user ON user_codes(user_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_user_codes_code ON user_codes(code)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_volunteer_assisted_volunteer ON volunteer_assisted(volunteer_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_volunteer_assisted_assisted ON volunteer_assisted(assisted_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_transport_requests_event ON event_transport_requests(event_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_transport_requests_user ON event_transport_requests(user_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)
+            """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id)
             """
             )
 

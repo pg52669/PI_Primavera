@@ -10,6 +10,8 @@ from services.event_service import (
     get_events as get_events_service,
     mark_user_interest,
     remove_user_interest,
+    mark_interest_for_assisted,
+    get_event_by_id,
 )
 
 events_api = Blueprint("events", __name__)
@@ -91,6 +93,48 @@ def remove_interest(event_id):
         user_id = data.get("user_id")
 
         success, message, status_code = remove_user_interest(event_id, user_id)
+
+        if success:
+            return jsonify({"message": message}), status_code
+        else:
+            return jsonify({"error": message}), status_code
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@events_api.route("/event/<int:event_id>", methods=["GET"])
+def get_event(event_id):
+    """Get a specific event by ID"""
+    try:
+        success, result, status_code = get_event_by_id(event_id)
+
+        if success:
+            return jsonify(result), status_code
+        else:
+            return jsonify({"error": result}), status_code
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@events_api.route("/event/<int:event_id>/interest/assisted", methods=["POST"])
+def mark_interest_assisted(event_id):
+    """Mark an assisted user as interested in an event (by their volunteer)"""
+    try:
+        data = extract_request_data(request)
+        volunteer_id = data.get("volunteer_id")
+        assisted_id = data.get("assisted_id")
+
+        if not volunteer_id or not assisted_id:
+            return (
+                jsonify({"error": "Missing required fields: volunteer_id, assisted_id"}),
+                400,
+            )
+
+        success, message, status_code = mark_interest_for_assisted(
+            event_id, volunteer_id, assisted_id
+        )
 
         if success:
             return jsonify({"message": message}), status_code

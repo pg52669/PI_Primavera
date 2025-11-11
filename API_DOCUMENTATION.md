@@ -717,6 +717,585 @@ curl -X GET http://localhost:5001/health
 - `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - UNIQUE constraint on (user_id, event_id)
 
+#### user_codes
+
+- `id`: SERIAL PRIMARY KEY
+- `user_id`: INTEGER NOT NULL UNIQUE (FK to users)
+- `code`: VARCHAR(20) NOT NULL UNIQUE
+- `is_active`: BOOLEAN DEFAULT TRUE
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+#### volunteer_assisted
+
+- `id`: SERIAL PRIMARY KEY
+- `volunteer_id`: INTEGER NOT NULL (FK to users)
+- `assisted_id`: INTEGER NOT NULL UNIQUE (FK to users)
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- UNIQUE constraint on (volunteer_id, assisted_id)
+
+#### event_transport_requests
+
+- `id`: SERIAL PRIMARY KEY
+- `event_id`: INTEGER NOT NULL (FK to events)
+- `user_id`: INTEGER NOT NULL (FK to users)
+- `requested_by_volunteer_id`: INTEGER (FK to users, nullable)
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- UNIQUE constraint on (event_id, user_id)
+
+#### messages
+
+- `id`: SERIAL PRIMARY KEY
+- `sender_id`: INTEGER NOT NULL (FK to users)
+- `receiver_id`: INTEGER NOT NULL (FK to users)
+- `message`: TEXT NOT NULL
+- `is_read`: BOOLEAN DEFAULT FALSE
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+---
+
+## Volunteer-Assisted Endpoints
+
+### 14. Get User QR Code
+
+**Endpoint:** `GET /user/<user_id>/code`
+
+**Description:** Get or generate a unique QR code for a user. Assisted users cannot have active QR codes.
+
+**URL Parameters:**
+
+- `user_id`: ID of the user
+
+**Response (200 OK):**
+
+```json
+{
+  "user_id": 1,
+  "code": "ABC12345"
+}
+```
+
+**Error Responses:**
+
+- `404`: User not found
+- `403`: Assisted users cannot have active QR codes
+
+**Example with curl:**
+
+```bash
+curl -X GET http://localhost:5001/user/1/code
+```
+
+---
+
+### 15. Associate Volunteer with Assisted User
+
+**Endpoint:** `POST /volunteer/associate`
+
+**Description:** Associate a volunteer with an assisted user by scanning their QR code. The user who scans becomes a volunteer, and the user whose code is scanned becomes assisted.
+
+**Request Body (JSON):**
+
+```json
+{
+  "volunteer_id": 1,
+  "code": "ABC12345"
+}
+```
+
+**Fields:**
+
+- `volunteer_id` (required): ID of the user who is scanning (will become volunteer)
+- `code` (required): QR code of the user to be associated (will become assisted)
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Successfully associated volunteer with assisted user",
+  "volunteer_id": 1,
+  "assisted_id": 2
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields
+- `403`: Assisted users cannot read QR codes
+- `404`: Invalid QR code or user not found
+- `409`: User is already associated with a volunteer
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/volunteer/associate \
+  -H "Content-Type: application/json" \
+  -d '{"volunteer_id":1,"code":"ABC12345"}'
+```
+
+---
+
+### 16. Disassociate Volunteer from Assisted User
+
+**Endpoint:** `POST /volunteer/disassociate`
+
+**Description:** Disassociate a volunteer from an assisted user. Requires confirmation by typing "CONFIRMAR".
+
+**Request Body (JSON):**
+
+```json
+{
+  "volunteer_id": 1,
+  "assisted_id": 2,
+  "confirmation": "CONFIRMAR"
+}
+```
+
+**Fields:**
+
+- `volunteer_id` (required): ID of the volunteer
+- `assisted_id` (required): ID of the assisted user
+- `confirmation` (required): Must be exactly "CONFIRMAR"
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Successfully disassociated volunteer from assisted user"
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields or invalid confirmation
+- `404`: Association not found
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/volunteer/disassociate \
+  -H "Content-Type: application/json" \
+  -d '{"volunteer_id":1,"assisted_id":2,"confirmation":"CONFIRMAR"}'
+```
+
+---
+
+### 17. Get Assisted Users for Volunteer
+
+**Endpoint:** `GET /volunteer/<volunteer_id>/assisted-users`
+
+**Description:** Get all assisted users associated with a volunteer.
+
+**URL Parameters:**
+
+- `volunteer_id`: ID of the volunteer
+
+**Response (200 OK):**
+
+```json
+{
+  "assisted_users": [
+    {
+      "id": 2,
+      "name": "Jane Doe",
+      "age": 65,
+      "gender": "female",
+      "city": "Braga",
+      "created_at": "2025-11-05T10:30:00"
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses:**
+
+- `404`: Volunteer not found
+
+**Example with curl:**
+
+```bash
+curl -X GET http://localhost:5001/volunteer/1/assisted-users
+```
+
+---
+
+### 18. Get Volunteer for Assisted User
+
+**Endpoint:** `GET /assisted/<assisted_id>/volunteer`
+
+**Description:** Get the volunteer associated with an assisted user.
+
+**URL Parameters:**
+
+- `assisted_id`: ID of the assisted user
+
+**Response (200 OK):**
+
+```json
+{
+  "volunteer": {
+    "id": 1,
+    "name": "John Doe",
+    "age": 30,
+    "gender": "male",
+    "city": "Braga",
+    "created_at": "2025-11-05T10:30:00"
+  }
+}
+```
+
+**Error Responses:**
+
+- `404`: Assisted user not found or no volunteer associated
+
+**Example with curl:**
+
+```bash
+curl -X GET http://localhost:5001/assisted/2/volunteer
+```
+
+---
+
+## Transport Request Endpoints
+
+### 19. Create Transport Request
+
+**Endpoint:** `POST /event/<event_id>/transport-request`
+
+**Description:** Create a transport request for an event. A volunteer can request transport for themselves or their assisted users.
+
+**URL Parameters:**
+
+- `event_id`: ID of the event
+
+**Request Body (JSON):**
+
+```json
+{
+  "user_id": 2,
+  "requested_by_volunteer_id": 1
+}
+```
+
+**Fields:**
+
+- `user_id` (required): ID of the user requesting transport
+- `requested_by_volunteer_id` (optional): ID of the volunteer making the request (if requesting for an assisted user)
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Transport request created successfully",
+  "transport_request": {
+    "id": 1,
+    "event_id": 1,
+    "user_id": 2,
+    "requested_by_volunteer_id": 1,
+    "created_at": "2025-11-05T10:30:00"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required field
+- `403`: User is not associated with this volunteer
+- `404`: Event, user, or volunteer not found
+- `409`: Transport request already exists
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/event/1/transport-request \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":2,"requested_by_volunteer_id":1}'
+```
+
+---
+
+### 20. Get Transport Requests for Event
+
+**Endpoint:** `GET /event/<event_id>/transport-requests`
+
+**Description:** Get all transport requests for a specific event. Used by event organizers to see who needs transportation.
+
+**URL Parameters:**
+
+- `event_id`: ID of the event
+
+**Response (200 OK):**
+
+```json
+{
+  "transport_requests": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "user_name": "Jane Doe",
+      "user_age": 65,
+      "user_city": "Braga",
+      "requested_by_volunteer_id": 1,
+      "volunteer_name": "John Doe",
+      "created_at": "2025-11-05T10:30:00"
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses:**
+
+- `404`: Event not found
+
+**Example with curl:**
+
+```bash
+curl -X GET http://localhost:5001/event/1/transport-requests
+```
+
+---
+
+### 20b. Create Transport Request for Assisted User
+
+**Endpoint:** `POST /event/<event_id>/transport-request/assisted`
+
+**Description:** Create a transport request for an assisted user (by their volunteer). Similar to marking interest for assisted users.
+
+**URL Parameters:**
+
+- `event_id`: ID of the event
+
+**Request Body (JSON):**
+
+```json
+{
+  "volunteer_id": 1,
+  "assisted_id": 2
+}
+```
+
+**Fields:**
+
+- `volunteer_id` (required): ID of the volunteer making the request
+- `assisted_id` (required): ID of the assisted user needing transport
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Transport request created successfully for assisted user",
+  "transport_request": {
+    "id": 1,
+    "event_id": 1,
+    "user_id": 2,
+    "requested_by_volunteer_id": 1,
+    "created_at": "2025-11-05T10:30:00"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields
+- `403`: User is not associated with this volunteer
+- `404`: Event, volunteer, or assisted user not found
+- `409`: Transport request already exists for this user and event
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/event/1/transport-request/assisted \
+  -H "Content-Type: application/json" \
+  -d '{"volunteer_id":1,"assisted_id":2}'
+```
+
+---
+
+## Message Endpoints
+
+### 21. Send Message
+
+**Endpoint:** `POST /messages`
+
+**Description:** Send a message between users. Only volunteers and their assisted users can communicate.
+
+**Request Body (JSON):**
+
+```json
+{
+  "sender_id": 1,
+  "receiver_id": 2,
+  "message": "Hello! I can help you with the event."
+}
+```
+
+**Fields:**
+
+- `sender_id` (required): ID of the message sender
+- `receiver_id` (required): ID of the message receiver
+- `message` (required): Message content
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Message sent successfully",
+  "message_data": {
+    "id": 1,
+    "sender_id": 1,
+    "receiver_id": 2,
+    "message": "Hello! I can help you with the event.",
+    "is_read": false,
+    "created_at": "2025-11-05T10:30:00"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields or empty message
+- `403`: Users can only communicate if they have a volunteer-assisted relationship
+- `404`: Sender or receiver not found
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/messages \
+  -H "Content-Type: application/json" \
+  -d '{"sender_id":1,"receiver_id":2,"message":"Hello!"}'
+```
+
+---
+
+### 22. Get Messages for User
+
+**Endpoint:** `GET /messages?user_id=<user_id>`
+
+**Description:** Get all messages received by a user.
+
+**Query Parameters:**
+
+- `user_id` (required): ID of the user
+
+**Response (200 OK):**
+
+```json
+{
+  "messages": [
+    {
+      "id": 1,
+      "sender_id": 1,
+      "receiver_id": 2,
+      "message": "Hello! I can help you with the event.",
+      "is_read": false,
+      "created_at": "2025-11-05T10:30:00",
+      "sender_name": "John Doe",
+      "sender_city": "Braga"
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing user_id parameter
+- `404`: User not found
+
+**Example with curl:**
+
+```bash
+curl -X GET "http://localhost:5001/messages?user_id=2"
+```
+
+---
+
+## Event Endpoints (Updated)
+
+### 23. Get Event by ID
+
+**Endpoint:** `GET /event/<event_id>`
+
+**Description:** Get a specific event by ID.
+
+**URL Parameters:**
+
+- `event_id`: ID of the event
+
+**Response (200 OK):**
+
+```json
+{
+  "event": {
+    "id": 1,
+    "name": "Tech Conference",
+    "description": "Annual tech conference",
+    "date": "15-11-2025",
+    "organisation_id": 1,
+    "interested_count": 5
+  }
+}
+```
+
+**Error Responses:**
+
+- `404`: Event not found
+
+**Example with curl:**
+
+```bash
+curl -X GET http://localhost:5001/event/1
+```
+
+---
+
+### 24. Mark Interest for Assisted User
+
+**Endpoint:** `POST /event/<event_id>/interest/assisted`
+
+**Description:** Mark an assisted user as interested in an event (by their volunteer).
+
+**URL Parameters:**
+
+- `event_id`: ID of the event
+
+**Request Body (JSON):**
+
+```json
+{
+  "volunteer_id": 1,
+  "assisted_id": 2
+}
+```
+
+**Fields:**
+
+- `volunteer_id` (required): ID of the volunteer
+- `assisted_id` (required): ID of the assisted user
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Interest registered successfully for assisted user"
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields
+- `403`: User is not associated with this volunteer
+- `404`: Event, volunteer, or assisted user not found
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:5001/event/1/interest/assisted \
+  -H "Content-Type: application/json" \
+  -d '{"volunteer_id":1,"assisted_id":2}'
+```
+
 ---
 
 ## Notes
@@ -730,3 +1309,17 @@ curl -X GET http://localhost:5001/health
 - Organisations can specify allowed locations at both municipality and parish levels
 - Initially, only the Braga district is populated with all 14 municipalities and all 37 parishes of Braga municipality
 - Location hierarchy: District → Municipality → Parish
+- **Volunteer-Assisted System:**
+  - Users start as normal users with active QR codes
+  - When a user scans another user's QR code, the scanner becomes a volunteer and the scanned user becomes assisted
+  - Assisted users cannot have active QR codes and cannot scan other QR codes
+  - Volunteers can have multiple assisted users
+  - Each assisted user can only have one volunteer
+  - The `is_volunteer` and `is_assisted` flags are automatically updated based on associations
+- **Transport Requests:**
+  - Users can request transport for events
+  - Volunteers can request transport for their assisted users
+  - Event organizers can view all transport requests for their events
+- **Messaging:**
+  - Only volunteers and their assisted users can communicate through the app
+  - Messages are stored in the database and can be retrieved by users

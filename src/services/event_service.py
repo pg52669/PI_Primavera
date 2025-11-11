@@ -10,12 +10,14 @@ from models.event_model import (
     check_event_exists_by_id,
     delete_event_from_db,
     get_events_from_db,
+    get_event_by_id_from_db,
     check_user_interest_exists,
     add_user_interest_in_event,
     remove_user_interest_in_event,
 )
 from models.organisation_model import check_organisation_exists_by_id
 from models.user_model import check_user_exists
+from models.volunteer_model import check_association_exists, get_assisted_users_by_volunteer
 
 
 def validate_event_data(data):
@@ -150,3 +152,51 @@ def remove_user_interest(event_id, user_id):
         return False, "User was not interested in this event", 404
 
     return True, "Interest removed successfully", 200
+
+
+def mark_interest_for_assisted(event_id, volunteer_id, assisted_id):
+    """
+    Mark an assisted user as interested in an event (by their volunteer)
+    Returns: (success: bool, message: str, status_code: int)
+    """
+    # Verify volunteer exists
+    if not check_user_exists(volunteer_id):
+        return False, "Volunteer not found", 404
+
+    # Verify assisted user exists
+    if not check_user_exists(assisted_id):
+        return False, "Assisted user not found", 404
+
+    # Verify event exists
+    if not check_event_exists_by_id(event_id):
+        return False, "Event not found", 404
+
+    # Verify association exists
+    if not check_association_exists(volunteer_id, assisted_id):
+        return False, "User is not associated with this volunteer", 403
+
+    # Check if already interested
+    if check_user_interest_exists(assisted_id, event_id):
+        return True, "User is already interested in this event", 200
+
+    # Add interest (for the assisted user)
+    add_user_interest_in_event(assisted_id, event_id)
+
+    return True, "Interest registered successfully for assisted user", 201
+
+
+def get_event_by_id(event_id):
+    """
+    Get a specific event by ID
+    Returns: (success: bool, result: dict/str, status_code: int)
+    """
+    # Get event details
+    event = get_event_by_id_from_db(event_id)
+
+    if not event:
+        return False, "Event not found", 404
+
+    # Format event
+    formatted_event = format_event(event)
+
+    return True, {"event": formatted_event}, 200

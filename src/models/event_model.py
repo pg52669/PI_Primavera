@@ -68,6 +68,22 @@ def delete_event_from_db(event_id):
         conn.close()
 
 
+def get_event_by_id_from_db(event_id):
+    """Get a specific event by ID"""
+    conn = get_db_connection()
+    cursor = get_db_cursor(conn)
+
+    try:
+        cursor.execute(
+            "SELECT id, name, description, date, organisation_id, interested_count FROM events WHERE id = %s",
+            (event_id,)
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def get_events_from_db(name_filter=None, date_obj=None):
     """Get all events with optional filters"""
     conn = get_db_connection()
